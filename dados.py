@@ -72,8 +72,9 @@ def insert_data():
     d1 = Disciplina(codigo_disciplina="TMT0043", nome_disciplina="Fundamentos de Cálculo",periodo_ideal=1,carga_horaria=60,ementa="Teoria dos Conjuntos, relações e funções. Função do 1º grau, função do 2º grau, função modular. Composição de funções e função inversa. Função exponencial e função logarítmica. Funções trigonométricas. Números inteiros e divisibilidade. Aplicações em Sistemas de Informação.",obrigatoria=True,eixo=Eixo.fundamentos_matematica)
     d2 = Disciplina(codigo_disciplina="TMT0044", nome_disciplina="Álgebra Linear",periodo_ideal=2,carga_horaria=60,ementa="Sistemas de equações lineares. Determinantes. Matrizes. Subespaços vetoriais Euclidianos. Transformações lineares. Autovalores e autovetores; diagonalização. Produto interno",obrigatoria=True,eixo=Eixo.fundamentos_matematica)
     d3 = Disciplina(codigo_disciplina="TMT0045", nome_disciplina="Cálculo Diferencial e Integral I",periodo_ideal=2,carga_horaria=60,ementa="Limites e continuidade. Definição de derivada. Aplicações das derivadas. Integral indefinida e aplicações. Integral Definida e aplicações. Teorema Fundamental do Cálculo e aplicações. Aplicações em Sistemas de Informação.",obrigatoria=True,eixo=Eixo.fundamentos_matematica)
+    d4 = Disciplina(codigo_disciplina="HDI0142", nome_disciplina="Língua Brasileira de Sinais",periodo_ideal=6,carga_horaria=60,ementa="Língua Brasileira de Sinais e suas singularidades lingüísticas. Vivência da LIBRAS a partir do contato direto com um(a) professor(a) surdo(a). Implicações do Decreto n° 5.626 para a prática escolar e formação do(a) professor(a).",obrigatoria=False,eixo=Eixo.desenvolvimento_pessoal)
 
-    session.add_all([d1, d2, d3])
+    session.add_all([d1, d2, d3, d4])
     session.commit()
 
     # Inserindo requisitos
@@ -94,15 +95,15 @@ def insert_data():
 def print_disciplinas_e_requisitos():
     disciplinas = session.query(Disciplina).all()
     for disciplina in disciplinas:
-        requisitos = session.query(Requisito).filter(Requisito.id_disciplina == disciplina.id_disciplina).all()
+        requisitos = session.query(Requisito).filter(Requisito.codigo_disciplina == disciplina.codigo_disciplina).all()
         if requisitos:
             requisitos_nomes = [
-                session.query(Disciplina).filter(Disciplina.id_disciplina == r.id_requisito).first().nome_disciplina for r in requisitos
+                session.query(Disciplina).filter(Disciplina.codigo_disciplina == r.codigo_requisito).first().nome_disciplina for r in requisitos
             ]
             print(f"{disciplina.nome_disciplina}: {', '.join(requisitos_nomes)}")
         else:
             print(f"{disciplina.nome_disciplina}: Nenhum requisito")
 
 # Rodando as funções
-insert_data()  # Insere os dados apenas uma vez
-# print_disciplinas_e_requisitos()  # Imprime as disciplinas e requisitos
+#insert_data()  # Insere os dados apenas uma vez
+#print_disciplinas_e_requisitos()  # Imprime as disciplinas e requisitos

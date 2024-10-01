@@ -1,6 +1,17 @@
 from fastapi import FastAPI, Path, HTTPException
 from typing import Optional
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from dados import Disciplina, QuadroHorarios, Requisito, Base, Enum
+
+# Criar engine para conectar ao banco de dados
+engine = create_engine('sqlite:///historico_escolar.db')
+
+# Criar uma sessão
+Session = sessionmaker(bind=engine)
+session = Session()
+
 app = FastAPI()
 
 disciplinas = {
@@ -72,49 +83,180 @@ disciplinas = {
 
 @app.get("/")
 def index():
-    return {"codigo_disciplina": "TMQ0007"}
+    return {"Data": "Bem vindo a API"}
+ 
+@app.get("/banco")
+def banco():
+    total_disciplinas = session.query(Disciplina).count()
+    return {"Total_Disciplinas_Cadastradas": total_disciplinas}
 
-@app.get("/disciplinas/{id}")
-def get_disciplina(id: int = Path(description="Entre com o ID da disciplina")):
-    if id < len(disciplinas):
-        return disciplinas[id]
+
+# Disciplinas
+
+@app.get("/get-todas-disciplinas")
+def get_disciplinas():
+
+    disciplinas = session.query(Disciplina).all()
+    if disciplinas:
+        dicionario_disciplinas = {}
+
+        for disciplina in disciplinas:
+            dicionario = {
+            'nome': disciplina.nome_disciplina,
+            'codigo': disciplina.codigo_disciplina,
+            'periodo': disciplina.periodo_ideal,
+            'carga_horaria': disciplina.carga_horaria,
+            'eixo': disciplina.eixo,
+            'tipo': 'Obrigatória' if disciplina.obrigatoria else 'Optativa',
+            'ementa': disciplina.ementa
+            }
+            dicionario_disciplinas[disciplina.codigo_disciplina] = dicionario
+
+        return dicionario_disciplinas
     else:
-        raise HTTPException(status_code=404, detail="Disciplina não encontrada")
-
+        return {"Data": f"Não encontramos nenhuma disciplina no banco."}
 
 @app.get("/get-disciplina-by-codigo")
-def get_disciplina(*, codigo: str, professor: Optional[str] = None):
-    lista_disciplinas = []
+def get_disciplina(codigo: str):
 
-    for id in disciplinas:
-        if disciplinas[id]['codigo_disciplina'] == codigo:
-            if professor == None:
-                lista_disciplinas.append(disciplinas[id])
-            else:
-                if professor == disciplinas[id]['professor']:
-                    lista_disciplinas.append(disciplinas[id])
+    disciplina = session.query(Disciplina).filter(Disciplina.codigo_disciplina == codigo).first()
 
-    if len(lista_disciplinas) > 0:
-        return lista_disciplinas
+    if disciplina:
+        dicionario_disciplina = {
+            'nome': disciplina.nome_disciplina,
+            'codigo': disciplina.codigo_disciplina,
+            'periodo': disciplina.periodo_ideal,
+            'carga_horaria': disciplina.carga_horaria,
+            'eixo': disciplina.eixo,
+            'tipo': 'Obrigatória' if disciplina.obrigatoria else 'Optativa',
+            'ementa': disciplina.ementa
+        }
+        return dicionario_disciplina
     else:
         return {"Data": f"Não encontramos a disciplina do código {codigo}"}
-        
+  
+@app.get("/get-disciplinas-por-periodo")
+def get_disciplinas(periodo: int):
 
-@app.get("/list-disciplinas-by-periodo")
-def list_disciplinas(periodo: int):
-    
-    lista_disciplinas = []
+    disciplinas = session.query(Disciplina).filter(Disciplina.periodo_ideal == periodo).all()
 
-    for id in disciplinas:
-        if disciplinas[id]["periodo"] == periodo:
-            lista_disciplinas.append(disciplinas[id])
+    if disciplinas:
+        dicionario_disciplinas = {}
 
-    if len(lista_disciplinas) > 0:
-        return lista_disciplinas
+        for disciplina in disciplinas:
+            dicionario = {
+            'nome': disciplina.nome_disciplina,
+            'codigo': disciplina.codigo_disciplina,
+            'periodo': disciplina.periodo_ideal,
+            'carga_horaria': disciplina.carga_horaria,
+            'eixo': disciplina.eixo,
+            'tipo': 'Obrigatória' if disciplina.obrigatoria else 'Optativa',
+            'ementa': disciplina.ementa
+            }
+            dicionario_disciplinas[disciplina.codigo_disciplina] = dicionario
+
+        return dicionario_disciplinas
     else:
         return {"Data": f"Não encontramos nenhuma disciplina do {periodo}° período"}
+    
+@app.get("/get-disciplinas-obrigatorias")
+def get_disciplinas():
+    disciplinas = session.query(Disciplina).filter(Disciplina.obrigatoria).all()
 
+    if disciplinas:
+        dicionario_disciplinas = {}
 
-@app.get("/disciplinas")
-def list_disciplinas():
-    return disciplinas
+        for disciplina in disciplinas:
+            dicionario = {
+            'nome': disciplina.nome_disciplina,
+            'codigo': disciplina.codigo_disciplina,
+            'periodo': disciplina.periodo_ideal,
+            'carga_horaria': disciplina.carga_horaria,
+            'eixo': disciplina.eixo,
+            'tipo': 'Obrigatória' if disciplina.obrigatoria else 'Optativa',
+            'ementa': disciplina.ementa
+            }
+            dicionario_disciplinas[disciplina.codigo_disciplina] = dicionario
+
+        return dicionario_disciplinas
+    else:
+        return {"Data": f"Não encontramos nenhuma disciplina obrigatória cadastrada."}
+    
+@app.get("/get-disciplinas-optativas")
+def get_disciplinas():
+    disciplinas = session.query(Disciplina).filter(Disciplina.obrigatoria == False).all()
+
+    if disciplinas:
+        dicionario_disciplinas = {}
+
+        for disciplina in disciplinas:
+            dicionario = {
+            'nome': disciplina.nome_disciplina,
+            'codigo': disciplina.codigo_disciplina,
+            'periodo': disciplina.periodo_ideal,
+            'carga_horaria': disciplina.carga_horaria,
+            'eixo': disciplina.eixo,
+            'tipo': 'Obrigatória' if disciplina.obrigatoria else 'Optativa',
+            'ementa': disciplina.ementa
+            }
+            dicionario_disciplinas[disciplina.codigo_disciplina] = dicionario
+
+        return dicionario_disciplinas
+    else:
+        return {"Data": f"Não encontramos nenhuma disciplina optativa cadastrada."}
+     
+@app.get("/get-disciplinas-por-eixo")
+def get_disciplinas(eixo: str):
+    
+    disciplinas = session.query(Disciplina).filter(Disciplina.eixo == eixo).all()
+
+    if disciplinas:
+        dicionario_disciplinas = {}
+
+        for disciplina in disciplinas:
+            dicionario = {
+            'nome': disciplina.nome_disciplina,
+            'codigo': disciplina.codigo_disciplina,
+            'periodo': disciplina.periodo_ideal,
+            'carga_horaria': disciplina.carga_horaria,
+            'eixo': disciplina.eixo,
+            'tipo': 'Obrigatória' if disciplina.obrigatoria else 'Optativa',
+            'ementa': disciplina.ementa
+            }
+            dicionario_disciplinas[disciplina.codigo_disciplina] = dicionario
+
+        return dicionario_disciplinas
+    else:
+        return {"Data": f"Não encontramos nenhuma disciplina do eixo {eixo}."}
+        
+
+# Requisitos
+
+@app.get("/get-requistos-por-disciplina")
+def get_requisitos(codigo_disciplina: str):
+
+    disciplina = session.query(Disciplina).filter(Disciplina.codigo_disciplina == codigo_disciplina).first()
+    
+    if disciplina:
+        requisitos = session.query(Requisito).filter(Requisito.codigo_disciplina == codigo_disciplina).all()
+        if requisitos:
+            dicionario_requisitos = {}
+            for requisito in requisitos:
+                disciplina_requisito = session.query(Disciplina).filter(Disciplina.codigo_disciplina == requisito.codigo_requisito).first()
+                dicionario = {
+                'nome': disciplina_requisito.nome_disciplina,
+                'codigo': disciplina_requisito.codigo_disciplina,
+                'periodo': disciplina_requisito.periodo_ideal,
+                'carga_horaria': disciplina_requisito.carga_horaria,
+                'eixo': disciplina_requisito.eixo,
+                'tipo': 'Obrigatória' if disciplina_requisito.obrigatoria else 'Optativa',
+                'ementa': disciplina_requisito.ementa
+                }
+                dicionario_requisitos[disciplina_requisito.codigo_disciplina] = dicionario
+
+            return dicionario_requisitos
+        else:
+            return {"Data": f"Não encontramos nenhum requisito para essa disciplina."}
+    else:
+        return {"Data": f"Não encontramos nenhuma disciplina com o código {codigo_disciplina}."}
+
